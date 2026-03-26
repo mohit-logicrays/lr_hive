@@ -11,3 +11,4 @@ class EmailTemplateType(TextChoices):
     PASSWORD_CHANGE = "password_change", _("Password Change")
     PASSWORD_RESET_LINK = "password_reset_link", _("Password Reset Link")
     PASSWORD_RESET_SUCCESS = "password_reset_success", _("Password Reset Success")
+    INVITE_USER = "invite_user", _("Invite User")

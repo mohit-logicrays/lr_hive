@@ -1,7 +1,14 @@
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from user.api.serializers import UserSerailizer
+from user.api.serializers import (
+    ProfileUpdateSerializer,
+    ResendOTPSerializer,
+    UserSerailizer,
+    VerifyOTPSerializer,
+)
 from user.models import User
 
 
@@ -32,6 +39,45 @@ class UserViewSet(ModelViewSet):
         Override get_object to return the current user object.
         """
         return self.queryset.get(id=self.request.user.id)
+
+
+class VerifyOTPAPIView(generics.GenericAPIView):
+    serializer_class = VerifyOTPSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            {
+                "detail": "OTP verified successfully. You can now log in.",
+                "email": user.email,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResendOTPAPIView(generics.GenericAPIView):
+    serializer_class = ResendOTPSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "A new OTP has been sent to your email."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ProfileUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = ProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
 
 
 class LoginAPiView(TokenObtainPairView):

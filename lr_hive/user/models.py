@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel, TitleDescriptionModel
+from django_otp_keygen.abstract_model import AbstractOtp
 from user.choices import EmailTemplateType
 
 
@@ -15,6 +16,10 @@ class User(AbstractUser):
     email = models.EmailField(verbose_name=_("Email"), unique=True)
     avatar = models.ImageField(
         verbose_name=_("Avatar"), upload_to=_upload_user_avatar, blank=True, null=True
+    )
+    email_verified = models.BooleanField(
+        default=False,
+        help_text=_("Email successfully verified or password updated after invite."),
     )
 
     USERNAME_FIELD = "email"
@@ -34,3 +39,7 @@ class EmailTemplate(TimeStampedModel, TitleDescriptionModel):
 
     def __str__(self):
         return self.title
+
+
+class Otp(AbstractOtp):
+    pass

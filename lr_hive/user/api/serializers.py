@@ -1,4 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
+from django_otp_keygen.otp_service import OtpService
+from postoffice.email_service import EmailService
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
@@ -43,38 +45,15 @@ class UserSerailizer(DynamicFieldsModelSerializer):
         }
 
     def validate_username(self, value):
-        """
-        Validate the username field.
-
-        Checks if the given username already exists or not in the database.
-        If it already exists, raises a serializers.ValidationError with a message
-        ValidationErrors.USERNAME_ALREADY_EXISTS.
-        """
-
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(ValidationErrors.USERNAME_ALREADY_EXISTS)
         return value
 
     def validate_email(self, value):
-        """
-        Validate the email field.
-
-        Normalizes the email by removing any leading/trailing whitespace and
-        converting the email to lowercase.
-        """
-
         value = normalize_email(value)
         return value
 
     def validate(self, attrs):
-        """
-        Validate the entire serializer data.
-
-        Checks if the password and confirm_password fields match.
-        If they do not match, raises a serializers.ValidationError with a message
-        indicating that the passwords do not match.
-        """
-
         if attrs.get("password") != attrs.get("confirm_password"):
             raise serializers.ValidationError(
                 {"confirm_password": ValidationErrors.PASSWORDS_DO_NOT_MATCH}
@@ -82,26 +61,91 @@ class UserSerailizer(DynamicFieldsModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """
-        Creates a new user and returns the created user object.
-
-        Pops the confirm_password from the validated_data and assigns the
-        username from the validated_data to the validate_password's username
-        before calling the super().create() method to create the user.
-
-        Args:
-            validated_data (dict): Validated data to use for creating the user.
-
-        Returns:
-            User: The created user object.
-        """
         password = validated_data.pop("confirm_password")
         if "username" not in validated_data:
             validated_data["username"] = validated_data.get("email")
+        validated_data["is_active"] = False
         user = super().create(validated_data)
         user.set_password(password)
         user.save()
+
+        # Generate and send OTP
+        otp_service = OtpService(user, "signup")
+        otp = otp_service.generate_otp()
+        EmailService().send_email_otp_verify_email(user, otp)
+
         return user
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+
+    def validate(self, attrs):
+        email = normalize_email(attrs.get("email"))
+        otp = attrs.get("otp")
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"email": "User does not exist."})
+
+        otp_service = OtpService(user, "signup")
+        if not otp_service.verify_otp(otp):
+            raise serializers.ValidationError({"otp": "Invalid or expired OTP."})
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.is_active = True
+        user.email_verified = True
+        user.save()
+        return user
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate(self, attrs):
+        email = normalize_email(attrs.get("email"))
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"email": "User does not exist."})
+
+        if user.email_verified:
+            raise serializers.ValidationError({"email": "Email is already verified."})
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        otp_service = OtpService(user, "signup")
+        otp = otp_service.generate_otp()
+        EmailService().send_email_otp_verify_email(user, otp)
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True, required=False, validators=[validate_password]
+    )
+
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "avatar", "password", "email_verified")
+        read_only_fields = ("email_verified",)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+            instance.email_verified = True
+        instance.save()
+        return instance
 
 
 class JWTTokenSerializer(TokenObtainPairSerializer):
@@ -110,6 +154,11 @@ class JWTTokenSerializer(TokenObtainPairSerializer):
     default_error_messages = {
         "no_active_account": ValidationErrors.INVALID_CREDENTIALS,
     }
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["email_verified"] = self.user.email_verified
+        return data
 
 
 class JWTTokenRefreshSerializer(TokenRefreshSerializer):

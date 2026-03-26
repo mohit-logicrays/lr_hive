@@ -4,11 +4,19 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "django_rq",
     "corsheaders",
+    "django_otp_keygen",
+    "postoffice",
 ]
 
 
 PROJECT_APPS = [
     "user.apps.UserConfig",
+    "core.apps.CoreConfig",
+    "leave.apps.LeaveConfig",
+    "notification.apps.NotificationConfig",
+    "organization.apps.OrganizationConfig",
+    "performance.apps.PerformanceConfig",
+    "support.apps.SupportConfig",
 ]
 DJANGO_APPS = [
     "django.contrib.admin",

@@ -58,3 +58,11 @@ ADMIN_EMAIL = env.get("ADMIN_EMAIL")
 
 # FRONTEND URL
 FRONTEND_URL = env.get("FRONTEND_URL")
+
+# OTP Settings
+OTP_MODEL = "user.Otp"
+OTP_TYPE_CHOICES = [
+    ("signup", "Signup OTP"),
+    ("forgot-password", "Forgot Password OTP"),
+    ("reset-password", "Reset Password OTP"),
+]

@@ -29,7 +29,8 @@ class EmailService:
             logger.error(f"Email template not found for type: {email_type}")
             mail_admins(
                 subject=f"Missing Email Template: {email_type}",
-                message=f"The email template for '{email_type}' is missing from the database. Please create it in the admin panel.",
+                message=f"""The email template for '{email_type}' is missing from the database.
+                 Please create it in the admin panel.""",
             )
             return None
 
@@ -127,3 +128,15 @@ class EmailService:
 
     def send_password_reset_success_email(self, user: User):
         self._send_templated_email(EmailTemplateType.PASSWORD_RESET_SUCCESS, user)
+
+    def send_invite_user_email(
+        self, user: User, temporary_password: str, organization_name: str
+    ):
+        self._send_templated_email(
+            EmailTemplateType.INVITE_USER,
+            user,
+            {
+                "temporary_password": temporary_password,
+                "organization_name": organization_name,
+            },
+        )
