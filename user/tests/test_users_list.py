@@ -27,4 +27,6 @@ class TestUsersListView(BaseTestCase):
         self.is_pagination_response(data=response.data)
         results = response.data["results"]
         for user in results:
-            assert User.objects.filter(**user).exists()
+            assert User.objects.filter(
+                username=user["username"], email=user["email"]
+            ).exists()
