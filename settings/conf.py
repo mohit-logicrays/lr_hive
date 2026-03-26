@@ -15,7 +15,7 @@ APPEND_SLASH = True
 AUTH_USER_MODEL = Settings.AUTH_USER_MODEL
 
 # Project Secret Key
-SECRET_KEY = env.get("SECRET_KEY")
+SECRET_KEY = env.get("SECRET_KEY", "secret-key-test")
 
 ROOT_URLCONF = Settings.ROOT_URLCONF
 
