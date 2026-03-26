@@ -6,6 +6,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "django_otp_keygen",
     "postoffice",
+    "drf_yasg",
 ]
 
 
