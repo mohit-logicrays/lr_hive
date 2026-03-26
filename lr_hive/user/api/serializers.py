@@ -4,7 +4,6 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-
 from user.constants import ValidationErrors
 from user.models import User
 from utils.serializers import DynamicFieldsModelSerializer

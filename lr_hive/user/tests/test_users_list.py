@@ -2,7 +2,6 @@
 from http import HTTPStatus
 
 from django.urls import reverse
-
 from user.models import User
 from user.tests.base_test import BaseTestCase
 from user.tests.constants import UrlsNames

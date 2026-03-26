@@ -1,6 +1,5 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-
 from user.api.api import UserViewSet, login_api_view, token_refresh_view
 
 app_name = "user"

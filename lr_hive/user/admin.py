@@ -1,6 +1,5 @@
 from django.contrib.admin import site
 from django.contrib.auth.admin import UserAdmin
-
 from user.models import User
 
 

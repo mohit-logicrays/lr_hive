@@ -2,7 +2,6 @@ from os.path import join
 from pathlib import Path
 
 from dotenv import dotenv_values
-
 from utils.constants import EmailConfig, Settings
 
 env = dotenv_values(".env")

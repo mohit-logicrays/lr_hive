@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from django.urls import reverse
-
 from user.constants import ValidationErrors
 from user.tests.base_test import BaseTestCase
 from user.tests.constants import UrlsNames

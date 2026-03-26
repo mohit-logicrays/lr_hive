@@ -1,6 +1,5 @@
 from factory.django import DjangoModelFactory
 from faker import Faker
-
 from user.models import User
 
 fake = Faker()
