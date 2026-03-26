@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django_rq import job
@@ -8,7 +10,10 @@ def send_email(
     message: str,
     from_email: str,
     recipient_list: list,
-    reply_to_emails: list,
+    reply_to_emails: Optional[list] = None,
+    cc: Optional[list] = None,
+    bcc: Optional[list] = None,
+    attachments: Optional[list] = None,
     is_html: bool = False,
 ):
     """
@@ -17,8 +22,11 @@ def send_email(
     :param subject: The email subject.
     :param message: The email body.
     :param from_email: The email sender.
-    :param to_emails: The email recipient(s).
+    :param recipient_list: The email recipient(s).
     :param reply_to_emails: The email reply-to address.
+    :param cc: List of CC recipients.
+    :param bcc: List of BCC recipients.
+    :param attachments: List of tuples (filename, content, mimetype) for attachments.
     :param is_html: Whether the message is HTML, default False.
     :return: None
     """
@@ -27,10 +35,17 @@ def send_email(
         body=strip_tags(message),
         from_email=from_email,
         to=recipient_list,
-        reply_to=[reply_to_emails],
+        reply_to=reply_to_emails,
+        cc=cc,
+        bcc=bcc,
     )
     if is_html:
         mail.attach_alternative(message, "text/html")
+
+    if attachments:
+        for attachment in attachments:
+            mail.attach(*attachment)
+
     mail.send(fail_silently=False)
     return
 
@@ -41,7 +56,10 @@ def send_delayed_email(
     message: str,
     from_email: str,
     recipient_list: list,
-    reply_to_emails: list,
+    reply_to_emails: Optional[list] = None,
+    cc: Optional[list] = None,
+    bcc: Optional[list] = None,
+    attachments: Optional[list] = None,
     is_html: bool = False,
 ):
     """
@@ -50,8 +68,11 @@ def send_delayed_email(
     :param subject: The email subject.
     :param message: The email body.
     :param from_email: The sender's email address.
-    :param to_emails: List of recipient email addresses.
+    :param recipient_list: List of recipient email addresses.
     :param reply_to_emails: List of reply-to email addresses.
+    :param cc: List of CC recipients.
+    :param bcc: List of BCC recipients.
+    :param attachments: List of tuples (filename, content, mimetype) for attachments.
     :param is_html: Flag to indicate if the message is HTML formatted, default is False.
     """
 
@@ -61,5 +82,8 @@ def send_delayed_email(
         from_email=from_email,
         recipient_list=recipient_list,
         reply_to_emails=reply_to_emails,
+        cc=cc,
+        bcc=bcc,
+        attachments=attachments,
         is_html=is_html,
     )

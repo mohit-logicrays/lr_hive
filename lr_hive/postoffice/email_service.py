@@ -1,317 +1,129 @@
-"""
-postoffice/email_service.py
-Class-based email service for sending and logging emails through postoffice.
-All application emails route through EmailService for CCPA compliance & audit trail.
-"""
-
 import logging
 from typing import Any, Dict, Optional, Tuple
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils.html import strip_tags
+from django.core.mail import mail_admins
 from postoffice.tasks import send_delayed_email, send_email as send_email_sync_task
+from user.choices import EmailTemplateType
+from user.models import EmailTemplate
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
 class EmailService:
-    """
-    Service class for sending and tracking emails through postoffice.
-    Handles both async and sync email sending with automatic Email model logging.
-
-    Usage:
-        service = EmailService()
-        email_record = service.send_async(
-            template_type='privacy',
-            recipient_email='user@example.com',
-            subject='Your Export is Ready',
-            body='<html>...</html>',
-            is_html=True,
-            user=request.user
-        )
-    """
-
-    VALID_TEMPLATE_TYPES = [
-        "account",
-        "privacy",
-        "order",
-        "marketing",
-        "system",
-        "custom",
-    ]
-
-    def __init__(self):
-        """Initialize email service."""
-        self.from_email = getattr(
-            settings, "DEFAULT_FROM_EMAIL", "noreply@jointcommerce.com"
-        )
-        self.frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
-
-    def send_async(
+    def __init__(
         self,
-        template_type: str,
-        recipient_email: str,
-        subject: str,
-        body: str,
-        is_html: bool = False,
-        user: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        reply_to: Optional[str] = None,
-    ) -> Tuple[Any, Any]:
-        """
-        Send email asynchronously via Celery task and log to Database.
+        sender_email: Optional[str] = None,
+        reply_to: Optional[list] = None,
+    ):
+        self.sender_email = sender_email or settings.EMAIL_HOST_USER
+        self.reply_to = reply_to or [self.sender_email]
 
-        Args:
-            template_type: Email category (account|privacy|order|marketing|system|custom)
-            recipient_email: Recipient email address
-            subject: Email subject line
-            body: Email body (HTML if is_html=True)
-            is_html: Whether body contains HTML
-            user: Related User object (optional)
-            metadata: Additional context data (dict)
-            reply_to: Reply-to email address
-
-        Returns:
-            tuple: (Email model instance, Celery task object)
-
-        Raises:
-            ValueError: If template_type is invalid
-        """
-        from users.models import Email
-
-        # Validate template type
-        template_type = self._validate_template_type(template_type)
-
+    def get_template(self, email_type: str) -> Optional[EmailTemplate]:
+        """Fetch email template by type, notify admins if missing."""
         try:
-            # Create audit log
-            email_record = Email.objects.create(
-                user=user,
-                recipient_email=recipient_email,
-                template_type=template_type,
-                subject=subject,
-                body=body,
-                is_html=is_html,
-                metadata=metadata or {},
+            return EmailTemplate.objects.get(email_type=email_type)
+        except EmailTemplate.DoesNotExist:
+            logger.error(f"Email template not found for type: {email_type}")
+            mail_admins(
+                subject=f"Missing Email Template: {email_type}",
+                message=f"The email template for '{email_type}' is missing from the database. Please create it in the admin panel.",
             )
+            return None
 
-            # Prepare reply-to
-            reply_to_email = reply_to or self.from_email
+    def render_template(
+        self, template: EmailTemplate, context: Dict[str, Any]
+    ) -> Tuple[str, str]:
+        """Render template subject and body with context."""
+        subject = template.subject.format(**context)
+        body = template.body.format(**context)
+        return subject, body
 
-            # Queue async task
-            task = send_delayed_email(
+    def send_email(
+        self,
+        to_email: Any,
+        subject: Optional[str] = None,
+        body: Optional[str] = None,
+        from_email: Optional[str] = None,
+        cc: Optional[list] = None,
+        bcc: Optional[list] = None,
+        attachments: Optional[list] = None,
+        reply_to: Optional[list] = None,
+        is_html: bool = False,
+        delay_seconds: Optional[int] = None,
+        template: Optional[EmailTemplate] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ):
+        """Unified email sending method supporting templates and delayed delivery."""
+        if template:
+            subject, body = self.render_template(template, context or {})
+            is_html = template.is_html
+
+        recipient_list = [to_email] if isinstance(to_email, str) else to_email
+        from_email = from_email or self.sender_email
+        reply_to = reply_to or self.reply_to
+
+        if delay_seconds:
+            send_delayed_email.delay(
                 subject=subject,
                 message=body,
-                from_email=self.from_email,
-                recipient_list=[recipient_email],
-                reply_to_emails=reply_to_email,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                reply_to_emails=reply_to,
+                cc=cc,
+                bcc=bcc,
+                attachments=attachments,
                 is_html=is_html,
             )
-
-            # Mark sent and store task ID
-            email_record.mark_sent()
-            if task and hasattr(task, "id"):
-                email_record.metadata["celery_task_id"] = str(task.id)
-                email_record.save(update_fields=["metadata"])
-
-            logger.info(
-                f"[EmailService] Async email queued: {email_record.id} → "
-                f"{recipient_email} (type={template_type})"
-            )
-
-            return email_record, task
-
-        except Exception as e:
-            logger.error(
-                f"[EmailService] Error sending async email to {recipient_email} "
-                f"(type={template_type}): {e}",
-                exc_info=True,
-            )
-            raise
-
-    def send_sync(
-        self,
-        template_type: str,
-        recipient_email: str,
-        subject: str,
-        body: str,
-        is_html: bool = False,
-        user: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        reply_to: Optional[str] = None,
-    ) -> Any:
-        """
-        Send email synchronously (blocking) and log to Database.
-
-        Use only for critical emails requiring immediate delivery.
-        Prefer send_async() for standard use cases.
-
-        Args:
-            Same as send_async()
-
-        Returns:
-            Email model instance
-
-        Raises:
-            Exception: If sending fails
-        """
-        from users.models import Email
-
-        # Validate template type
-        template_type = self._validate_template_type(template_type)
-
-        try:
-            # Create audit log
-            email_record = Email.objects.create(
-                user=user,
-                recipient_email=recipient_email,
-                template_type=template_type,
-                subject=subject,
-                body=body,
-                is_html=is_html,
-                metadata=metadata or {},
-            )
-
-            # Prepare reply-to
-            reply_to_email = reply_to or self.from_email
-
-            # Send synchronously
+        else:
             send_email_sync_task(
                 subject=subject,
                 message=body,
-                from_email=self.from_email,
-                recipient_list=[recipient_email],
-                reply_to_emails=reply_to_email,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                reply_to_emails=reply_to,
+                cc=cc,
+                bcc=bcc,
+                attachments=attachments,
                 is_html=is_html,
             )
 
-            # Mark sent
-            email_record.mark_sent()
-
-            logger.info(
-                f"[EmailService] Sync email sent: {email_record.id} → "
-                f"{recipient_email} (type={template_type})"
-            )
-
-            return email_record
-
-        except Exception as e:
-            logger.error(
-                f"[EmailService] Error sending sync email to {recipient_email} "
-                f"(type={template_type}): {e}",
-                exc_info=True,
-            )
-
-            # Mark failed
-            try:
-                email_record.mark_failed(str(e))
-            except Exception:
-                pass
-
-            raise
-
-    def _validate_template_type(self, template_type: str) -> str:
-        """
-        Validate and normalize template type.
-
-        Args:
-            template_type: Template type string to validate
-
-        Returns:
-            str: Valid template type (or 'custom' if invalid)
-        """
-        if template_type not in self.VALID_TEMPLATE_TYPES:
-            logger.warning(
-                f"[EmailService] Invalid template_type '{template_type}', "
-                f"using 'custom'"
-            )
-            return "custom"
-        return template_type
-
-    def get_email_records(
-        self,
-        user: Optional[User] = None,
-        template_type: Optional[str] = None,
-        status: Optional[str] = None,
-        limit: int = 100,
+    def _send_templated_email(
+        self, email_type: str, user: User, context: Optional[Dict[str, Any]] = None
     ):
-        """
-        Retrieve email records with optional filtering.
+        """Helper to send templated emails based on EmailTemplateType."""
+        template = self.get_template(email_type)
+        if template:
+            ctx = {"user": user}
+            if context:
+                ctx.update(context)
+            self.send_email(to_email=user.email, template=template, context=ctx)
 
-        Args:
-            user: Filter by user
-            template_type: Filter by template type
-            status: Filter by status (sent|failed|pending|bounced)
-            limit: Max records to return
+    def send_welcome_email(self, user: User):
+        self._send_templated_email(EmailTemplateType.WELCOME, user)
 
-        Returns:
-            QuerySet: Filtered Email records
-        """
-        from users.models import Email
-
-        query = Email.objects.all()
-
-        if user:
-            query = query.filter(user=user)
-        if template_type:
-            query = query.filter(template_type=template_type)
-        if status:
-            query = query.filter(status=status)
-
-        return query.order_by("-created_at")[:limit]
-
-
-# Convenience function for backward compatibility and simple use cases
-def send_email_and_log(
-    template_type: str,
-    recipient_email: str,
-    subject: str,
-    body: str,
-    is_html: bool = False,
-    user: Optional[User] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-    reply_to: Optional[str] = None,
-    sync: bool = False,
-) -> Any:
-    """
-    Convenience function wrapping EmailService for one-off email sends.
-
-    Args:
-        template_type: Email category
-        recipient_email: Recipient email
-        subject: Email subject
-        body: Email body
-        is_html: Whether body is HTML
-        user: Related user
-        metadata: Additional context
-        reply_to: Reply-to address
-        sync: Whether to send synchronously (False = async)
-
-    Returns:
-        Email model instance if sync=True, (Email, Task) tuple if sync=False
-    """
-    service = EmailService()
-
-    if sync:
-        return service.send_sync(
-            template_type=template_type,
-            recipient_email=recipient_email,
-            subject=subject,
-            body=body,
-            is_html=is_html,
-            user=user,
-            metadata=metadata,
-            reply_to=reply_to,
+    def send_email_otp_verify_email(self, user: User, otp: str):
+        self._send_templated_email(
+            EmailTemplateType.EMAIL_OTP_VERIFY, user, {"otp": otp}
         )
-    else:
-        return service.send_async(
-            template_type=template_type,
-            recipient_email=recipient_email,
-            subject=subject,
-            body=body,
-            is_html=is_html,
-            user=user,
-            metadata=metadata,
-            reply_to=reply_to,
+
+    def send_email_verified_email(self, user: User):
+        self._send_templated_email(EmailTemplateType.EMAIL_VERIFIED, user)
+
+    def send_password_reset_email(self, user: User, reset_link: str):
+        self._send_templated_email(
+            EmailTemplateType.PASSWORD_RESET, user, {"reset_link": reset_link}
         )
+
+    def send_password_change_email(self, user: User):
+        self._send_templated_email(EmailTemplateType.PASSWORD_CHANGE, user)
+
+    def send_password_reset_link_email(self, user: User, reset_link: str):
+        self._send_templated_email(
+            EmailTemplateType.PASSWORD_RESET_LINK, user, {"reset_link": reset_link}
+        )
+
+    def send_password_reset_success_email(self, user: User):
+        self._send_templated_email(EmailTemplateType.PASSWORD_RESET_SUCCESS, user)
