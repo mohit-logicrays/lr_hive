@@ -140,3 +140,31 @@ class EmailService:
                 "organization_name": organization_name,
             },
         )
+
+    def send_organization_created_email(self, user: User, organization):
+        self._send_templated_email(
+            EmailTemplateType.ORGANIZATION_CREATED,
+            user,
+            {"organization_name": organization.name},
+        )
+
+    def send_organization_added_email(self, user: User, organization):
+        self._send_templated_email(
+            EmailTemplateType.ORGANIZATION_ADDED,
+            user,
+            {"organization_name": organization.name},
+        )
+
+    def send_organization_updated_email(self, user: User, organization):
+        self._send_templated_email(
+            EmailTemplateType.ORGANIZATION_UPDATED,
+            user,
+            {"organization_name": organization.name},
+        )
+
+    def send_organization_removed_email(self, user: User, organization):
+        self._send_templated_email(
+            EmailTemplateType.ORGANIZATION_REMOVED,
+            user,
+            {"organization_name": organization.name},
+        )

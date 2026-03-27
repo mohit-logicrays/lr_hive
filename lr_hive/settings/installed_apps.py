@@ -7,6 +7,7 @@ THIRD_PARTY_APPS = [
     "django_otp_keygen",
     "postoffice",
     "drf_yasg",
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 

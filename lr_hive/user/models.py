@@ -1,7 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django_extensions.db.models import TimeStampedModel, TitleDescriptionModel
+from django_extensions.db.models import (
+    ActivatorModel,
+    TimeStampedModel,
+    TitleDescriptionModel,
+)
 from django_otp_keygen.abstract_model import AbstractOtp
 from user.choices import EmailTemplateType
 
@@ -27,6 +31,16 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def get_user_organizations(self):
+        """
+        Returns all active OrganizationUser objects for the given user.
+
+        :return: OrganizationUserQuerySet
+        :rtype: QuerySet
+        """
+        return self.organization_users.filter(status=ActivatorModel.ACTIVE_STATUS)
 
 
 class EmailTemplate(TimeStampedModel, TitleDescriptionModel):

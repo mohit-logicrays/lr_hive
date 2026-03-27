@@ -11,6 +11,16 @@ class ValidationErrors:
     USER_DOES_NOT_EXIST = _("User does not exist.")
     INVALID_OR_EXPIRED_OTP = _("Invalid or expired OTP.")
     EMAIL_ALREADY_VERIFIED = _("Email is already verified.")
+    # Organization
+    ORGANIZATION_NAME_ALREADY_EXISTS = _(
+        "An organization with this name already exists."
+    )
+    ORGANIZATION_DOMAIN_ALREADY_EXISTS = _(
+        "An organization with the domain '@{domain}' is already registered."
+    )
+    USER_ALREADY_IN_ORGANIZATION = _(
+        "This user is already a member of the organization."
+    )
 
 
 class ExceptionMessages:

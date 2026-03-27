@@ -15,6 +15,7 @@ from utils.utils import normalize_email
 
 class UserSerailizer(DynamicFieldsModelSerializer):
     confirm_password = serializers.CharField(write_only=True, required=True)
+    organizations = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
@@ -28,6 +29,7 @@ class UserSerailizer(DynamicFieldsModelSerializer):
             "username",
             "password",
             "confirm_password",
+            "organizations",
         )
         read_only_fields = ("id", "is_active")
         extra_kwargs = {
@@ -44,6 +46,12 @@ class UserSerailizer(DynamicFieldsModelSerializer):
             "first_name": {"required": True},
             "last_name": {"required": False},
         }
+
+    def get_organizations(self, obj):
+        from organization.api.serializers import OrganizationUserSerializer
+
+        memberships = obj.get_user_organizations
+        return OrganizationUserSerializer(memberships, many=True).data
 
     def validate_username(self, value):
         """

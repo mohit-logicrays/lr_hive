@@ -211,3 +211,4 @@ dev.py
 
 .venv
 cache/
+media/

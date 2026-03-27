@@ -1,9 +1,11 @@
 from django_otp_keygen.otp_service import OtpService
 from postoffice.email_service import EmailService
 from rest_framework import generics, status
+from rest_framework.decorators import action
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from user.api.serializers import (
     ProfileUpdateSerializer,
@@ -14,7 +16,7 @@ from user.api.serializers import (
 from user.models import User
 
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerailizer
     filterset_fields = ["is_active"]
@@ -54,6 +56,18 @@ class UserViewSet(ModelViewSet):
         otp = otp_service.generate_otp()
         EmailService().send_email_otp_verify_email(user, otp)
         return user
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """
+        Returns the current user instance in JSON format.
+
+        :param request: The request object containing the user instance.
+        :return: A JSON response containing the current user instance.
+        :status: 200 OK
+        """
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class VerifyOTPAPIView(generics.GenericAPIView):
