@@ -38,6 +38,7 @@ USE_I18N = Settings.USE_I18N
 USE_TZ = Settings.USE_TZ
 DEFAULT_AUTO_FIELD = Settings.DEFAULT_AUTO_FIELD
 
+
 # Web Server Gateway Interface
 WSGI_APPLICATION = Settings.WSGI_APPLICATION
 
@@ -55,6 +56,14 @@ EMAIL_HOST_PASSWORD = env.get("EMAIL_HOST_PASSWORD")
 ADMIN_USER = env.get("ADMIN_USER")
 ADMIN_PASSWORD = env.get("ADMIN_PASSWORD")
 ADMIN_EMAIL = env.get("ADMIN_EMAIL")
-
+ADMINS = ((ADMIN_USER, ADMIN_EMAIL),)
 # FRONTEND URL
 FRONTEND_URL = env.get("FRONTEND_URL")
+
+# OTP Settings
+OTP_MODEL = "user.Otp"
+OTP_TYPE_CHOICES = [
+    ("signup", "Signup OTP"),
+    ("forgot-password", "Forgot Password OTP"),
+    ("reset-password", "Reset Password OTP"),
+]

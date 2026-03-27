@@ -73,3 +73,4 @@ urllib3==2.5.0
 virtualenv==20.32.0
 wcwidth==0.2.13
 zope.interface==7.2
+drf-yasg==1.21.8

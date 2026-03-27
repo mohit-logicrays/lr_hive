@@ -1,0 +1,74 @@
+[
+  {
+    "fields": {
+      "email_type": "welcome",
+      "title": "Welcome Email",
+      "subject": "Welcome to LR Hive!",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Welcome to LR Hive!</h2><p>Hi {user.first_name},</p><p>We are thrilled to have you on board. Your account has been successfully created.</p><p>Get ready to explore all the amazing features we have to offer.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "email_otp_verify",
+      "title": "Email OTP Verification",
+      "subject": "Your Email Verification OTP",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Verify Your Email</h2><p>Hi {user.first_name},</p><p>Please use the following One-Time Password (OTP) to verify your email address. This OTP is valid for a short period.</p><div style=\"text-align: center; margin: 30px 0;\"><span style=\"background-color: #f9f9f9; border: 1px dashed #ff0000; color: #ff0000; padding: 10px 20px; font-size: 24px; font-weight: bold; letter-spacing: 2px;\">{otp}</span></div><p>If you didn't request this, please ignore this email.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "email_verified",
+      "title": "Email Verified",
+      "subject": "Email Verified Successfully",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Email Verified</h2><p>Hi {user.first_name},</p><p>Your email address has been successfully verified. You now have full access to your account.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "password_reset",
+      "title": "Password Reset OTP",
+      "subject": "Your Password Reset OTP",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Password Reset OTP</h2><p>Hi {user.first_name},</p><p>You requested a password reset. Please use the following OTP to proceed:</p><div style=\"text-align: center; margin: 30px 0;\"><span style=\"background-color: #f9f9f9; border: 1px dashed #ff0000; color: #ff0000; padding: 10px 20px; font-size: 24px; font-weight: bold; letter-spacing: 2px;\">{otp}</span></div><p>If you didn't request a password reset, please secure your account immediately.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "password_change",
+      "title": "Password Changed",
+      "subject": "Your password was recently changed",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Password Changed</h2><p>Hi {user.first_name},</p><p>Your password has been successfully changed. If this was you, no further action is needed.</p><p>If you didn't perform this action, please contact support immediately.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "password_reset_link",
+      "title": "Password Reset Link",
+      "subject": "Reset your LR Hive password",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Reset Your Password</h2><p>Hi {user.first_name},</p><p>You requested a password reset. Click the button below to set a new password:</p><div style=\"text-align: center; margin: 30px 0;\"><a href=\"{reset_link}\" style=\"background-color: #ff0000; color: #ffffff; padding: 12px 25px; text-decoration: none; font-weight: bold; display: inline-block; border-radius: 4px;\">Reset Password</a></div><p>If you didn't request this, please ignore this email.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "password_reset_success",
+      "title": "Password Reset Success",
+      "subject": "Password Reset Successful",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">Password Reset Successful</h2><p>Hi {user.first_name},</p><p>Your password has been reset successfully. You can now log in using your new password.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  },
+  {
+    "fields": {
+      "email_type": "invite_user",
+      "title": "Invite User",
+      "subject": "You're Invited to LR Hive",
+      "is_html": true,
+      "body": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #dddddd;\"><div style=\"background-color: #000000; color: #ffffff; padding: 20px; text-align: center;\"><h1 style=\"margin: 0; color: #ff0000;\">LR Hive</h1></div><div style=\"background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;\"><h2 style=\"color: #000000;\">You're Invited!</h2><p>Hi {user.email},</p><p>You have been invited to join <strong>{organization_name}</strong> on LR Hive.</p><p>A temporary account has been created for you. Please log in using the credentials below and update your password immediately.</p><div style=\"background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ff0000; margin: 20px 0; font-family: monospace;\"><strong>Email:</strong> {user.email}<br><strong>Temporary Password:</strong> {temporary_password}</div><p>We recommend changing your password as soon as you log in.</p><p>Best regards,<br>The LR Hive Team</p></div><div style=\"background-color: #f1f1f1; color: #777777; padding: 15px; text-align: center; font-size: 12px;\">&copy; 2026 LR Hive. All rights reserved.</div></div>"
+    }
+  }
+]

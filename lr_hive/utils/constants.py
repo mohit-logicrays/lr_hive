@@ -24,10 +24,10 @@ class Settings:
 class EmailConfig:
     """Email Base Configuration"""
 
-    EMAIL_BACKEND = ""
-    EMAIL_HOST = ""
-    PORT_465 = True
-    PORT_587 = False
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = "smtp.gmail.com"
+    PORT_465 = 465
+    PORT_587 = 587
 
 
 class CacheTimeout:

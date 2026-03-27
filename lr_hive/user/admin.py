@@ -1,10 +1,12 @@
-from django.contrib.admin import site
-from django.contrib.auth.admin import UserAdmin
-from user.models import User
+from django.contrib import admin
+from user.models import EmailTemplate, User
 
 
-class UserAdmin(UserAdmin):
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
     pass
 
 
-site.register(User)
+@admin.register(EmailTemplate)
+class EmailTemplateAdmin(admin.ModelAdmin):
+    pass
