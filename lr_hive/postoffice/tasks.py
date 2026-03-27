@@ -30,6 +30,7 @@ def send_email(
     :param is_html: Whether the message is HTML, default False.
     :return: None
     """
+
     mail = EmailMultiAlternatives(
         subject=subject,
         body=strip_tags(message),
@@ -46,7 +47,7 @@ def send_email(
         for attachment in attachments:
             mail.attach(*attachment)
 
-    mail.send(fail_silently=False)
+    mail.send(fail_silently=True)
     return
 
 
