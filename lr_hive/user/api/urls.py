@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from user.api.api import (
+    FakerUserList,
     ProfileUpdateAPIView,
     ResendOTPAPIView,
     UserViewSet,
@@ -13,6 +14,7 @@ app_name = "user"
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="users")
+router.register(r"faker-users", FakerUserList, basename="faker-users")
 
 urlpatterns = [
     path(r"register/", UserViewSet.as_view({"post": "create"}), name="register"),

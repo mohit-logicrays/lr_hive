@@ -13,7 +13,10 @@ class OrganizationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ("id", "name", "description", "image", "email_domain", "slug")
-        read_only_fields = ("id", "slug", "email_domain")
+        read_only_fields = ("id", "slug")
+        extra_kwargs = {
+            "email_domain": {"required": True},
+        }
 
     def validate_name(self, value):
         """Ensure no organization with the same name or resulting slug already exists."""
@@ -21,6 +24,25 @@ class OrganizationCreateSerializer(serializers.ModelSerializer):
         if Organization.objects.filter(slug=slug).exists():
             raise serializers.ValidationError(
                 ValidationErrors.ORGANIZATION_NAME_ALREADY_EXISTS
+            )
+        return value
+
+    def validate_email_domain(self, value):
+        """Validate email_domain format (e.g. 'company.com') and uniqueness."""
+        import re
+
+        value = value.strip().lower()
+        # Must be a valid domain: label.tld, no @ symbol, no http
+        domain_regex = re.compile(
+            r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)" r"(\.[A-Za-z0-9-]{1,63})*\.[A-Za-z]{2,}$"
+        )
+        if not domain_regex.match(value):
+            raise serializers.ValidationError(
+                "Enter a valid domain name (e.g. company.com). Do not include '@' or 'http'."
+            )
+        if Organization.objects.filter(email_domain=value).exists():
+            raise serializers.ValidationError(
+                "An organization with the domain '{value}' already exists."
             )
         return value
 
@@ -74,30 +96,49 @@ class OrganizationUserSerializer(serializers.ModelSerializer):
 
 
 class InviteUserSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField(
+        max_length=150,
+        help_text="Username of the person to invite (email will be auto-built as username@org_domain)",
+    )
     role = serializers.ChoiceField(choices=OrganizationUserRole.choices)
     organization_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="organization"
     )
 
-    def validate_email(self, value):
-        from utils.utils import normalize_email
-
-        return normalize_email(value)
+    def validate_username(self, value):
+        # Reject any value that looks like a full email (user should only provide the local part)
+        if "@" in value:
+            raise serializers.ValidationError(
+                "Enter only the username part (e.g. 'john.doe'), not a full email address."
+            )
+        return value.strip().lower()
 
     def validate(self, attrs):
         organization = attrs["organization"]
-        email = attrs["email"]
+        username = attrs["username"]
+
+        if not organization.email_domain:
+            raise serializers.ValidationError(
+                {
+                    "organization_id": "This organization does not have an email domain configured."
+                }
+            )
+
+        # Build the full email from username + org domain
+        email = f"{username}@{organization.email_domain}"
+        attrs["email"] = email
+
+        # Check if user already belongs to this org
         try:
             user = User.objects.get(email=email)
             if OrganizationUser.objects.filter(
                 organization=organization, user=user
             ).exists():
                 raise serializers.ValidationError(
-                    {"email": ValidationErrors.USER_ALREADY_IN_ORGANIZATION}
+                    {"username": ValidationErrors.USER_ALREADY_IN_ORGANIZATION}
                 )
         except User.DoesNotExist:
-            pass  # New user - no conflict possible
+            pass  # New user — no conflict
         return attrs
 
     def generate_random_password(self, length=12):
@@ -108,11 +149,12 @@ class InviteUserSerializer(serializers.Serializer):
         email = self.validated_data["email"]
         role = self.validated_data["role"]
         organization = self.validated_data["organization"]
+        username = self.validated_data["username"]
 
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
-                "username": email,
+                "username": username,
                 "is_active": True,
                 "email_verified": False,
             },

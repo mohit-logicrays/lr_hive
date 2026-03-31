@@ -9,7 +9,6 @@ from organization.models import Organization, OrganizationUser
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from user.constants import ValidationErrors
 
 
 class OrganizationCreateAPIView(generics.CreateAPIView):
@@ -17,35 +16,11 @@ class OrganizationCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        """
-        Save the organization, set the email_domain from the request user's email,
-        and create the requesting user as the OWNER.
-        """
         user = self.request.user
-        # Extract domain from the creator's email e.g. "abc@company.com" -> "company.com"
-        email_domain = user.email.split("@")[-1].lower()
-
-        # Validate domain uniqueness here (serializer handles name uniqueness)
-        if Organization.objects.filter(email_domain=email_domain).exists():
-            from rest_framework.exceptions import ValidationError
-
-            raise ValidationError(
-                {
-                    "email_domain": str(
-                        ValidationErrors.ORGANIZATION_DOMAIN_ALREADY_EXISTS
-                    ).format(domain=email_domain)
-                }
-            )
-
-        org = serializer.save(email_domain=email_domain)
+        org = serializer.save()
         OrganizationUser.objects.create(
             organization=org, user=user, role=OrganizationUserRole.OWNER
         )
-
-        # Send org created email
-        from postoffice.email_service import EmailService
-
-        EmailService().send_organization_created_email(user, org)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

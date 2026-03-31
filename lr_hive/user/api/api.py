@@ -1,4 +1,5 @@
 from django_otp_keygen.otp_service import OtpService
+from faker import Faker
 from postoffice.email_service import EmailService
 from rest_framework import generics, status
 from rest_framework.decorators import action
@@ -14,6 +15,49 @@ from user.api.serializers import (
     VerifyOTPSerializer,
 )
 from user.models import User
+
+fake = Faker()
+
+
+class FakerUserList(ListModelMixin, GenericViewSet):
+    """
+    API view to generate and return a list of fake user data.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = None
+    odering_fields = None
+
+    def get_queryset(self):
+        return None
+
+    def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+
+        # Unauuthorized Rate Limit Key
+        RATE_LIMIT_KEY = f"faker_user_list_{request.META.get('HTTP_X_FORWARDED_FOR')}"
+        # Check if the data is already in cache
+        cached_data = cache.get(RATE_LIMIT_KEY) or {}
+        if cached_data and cached_data.get("count", 0) >= 5:
+            return Response(
+                {"detail": "Rate limit exceeded. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        # update rate limit count in cache
+        cache.set(
+            RATE_LIMIT_KEY, {"count": cached_data.get("count", 0) + 1}, timeout=300
+        )
+
+        fake_users = []
+        for _ in range(500):
+            fake_user = {
+                "email": fake.email(),
+                "username": fake.user_name(),
+                "first_name": fake.first_name(),
+                "last_name": fake.last_name(),
+            }
+            fake_users.append(fake_user)
+        return Response(fake_users, status=status.HTTP_200_OK)
 
 
 class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericViewSet):
